@@ -1,0 +1,7 @@
+// Verify permissions.
+propPerm = getOFVariablePerm(aKey);
+result = IOUserClient::clientHasPrivilege(current_task(), kIONVRAMPrivilege);
+if (result != kIOReturnSuccess) {
+  if (propPerm != kOFVariablePermUserWrite) return false;
+}
+if (propPerm == kOFVariablePermKernelOnly && current_task() != kernel_task) return 0;

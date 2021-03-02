@@ -1,0 +1,52 @@
+enum {
+  kOFVariablePermRootOnly = 0,  // kern: rw, root: rw, user: --
+  kOFVariablePermUserRead,      // kern: rw, root: rw, user: r-
+  kOFVariablePermUserWrite,     // kern: rw, root: rw, user: rw
+  kOFVariablePermKernelOnly     // kern: rw, root: --, user: --
+};
+
+getOFVariablePerm:
+
+UInt32 IODTNVRAM::getOFVariablePerm(const OSSymbol *propSymbol) const
+{
+  const OFVariable *ofVar;
+
+  ofVar = gOFVariables;
+  while (1) {
+    if ((ofVar->variableName == 0) ||
+	propSymbol->isEqualTo(ofVar->variableName)) break;
+    ofVar++;
+  }
+
+  return ofVar->variablePerm;
+}
+
+gOFVariables :
+
+struct OFVariable {
+  const char *variableName;
+  UInt32     variableType;
+  UInt32     variablePerm;
+  SInt32     variableOffset;
+};
+typedef struct OFVariable OFVariable;
+
+static const // Notice: on iOS 10 and below const keyword was missing
+OFVariable gOFVariables[] = {
+  {"little-endian?", kOFVariableTypeBoolean, kOFVariablePermUserRead, 0},
+  {"real-mode?", kOFVariableTypeBoolean, kOFVariablePermUserRead, 1},
+  // more variables
+#if CONFIG_EMBEDDED
+  {"backlight-level", kOFVariableTypeData, kOFVariablePermUserWrite, -1},
+  {"com.apple.System.sep.art", kOFVariableTypeData, kOFVariablePermKernelOnly, -1},
+  {"com.apple.System.boot-nonce", kOFVariableTypeString, kOFVariablePermKernelOnly, -1},
+  // more variables
+#endif
+  {0, kOFVariableTypeData, kOFVariablePermUserRead, -1}
+};
+
+class IODTNVRAM : public IOService {
+  // ...
+  virtual UInt32 getOFVariablePerm(const OSSymbol *propSymbol) const;
+  // ...
+};
